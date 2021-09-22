@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+WIDTH=${WIDTH:-200}
+HEIGHT=${HEIGHT:-200}
+DATEFMT=${DATEFMT:-"+%d-%m-%Y   %I:%M"}
+# +%a
+SHORTFMT=${SHORTFMT:-"+%H:%M"}
+
+# OPTIND=1
+# while getopts ":f:W:H:" opt; do
+#     case $opt in
+#         f) DATEFMT="$OPTARG" ;;
+#         W) WIDTH="$OPTARG" ;;
+#         H) HEIGHT="$OPTARG" ;;
+#         \?)
+#             echo "Invalid option: -$OPTARG" >&2
+#             exit 1
+#             ;;
+#         :)
+#             echo "Option -$OPTARG requires an argument." >&2
+#             exit 1
+#             ;;
+#     esac
+# done
+
+case "$BLOCK_BUTTON" in  1|2|3) 
+
+	# the position of the upper left corner of the popup
+	width=$(($width))
+	# height=50 #$(($BLOCK_Y - $HEIGHT))
+    xPos=$(($x - $relative_x))
+    yPos=$(($y - $relative_y))
+
+    # echo "$xPos"
+    # width = int(environ.get("width"))
+    # height = 500
+    # xPos = int(environ.get("x")) - int(environ.get("relative_x"))
+    # yPos = int(environ.get("y")) - int(environ.get("relative_y")) 
+
+    "/usr/share/i3blocks/DropDownMenus/CalendarDropDown" "$xPos" "$yPos" "$width" "1" "background-color:#000000;color:#ffffff;alternate-background-color:#000000;" "#000050" "3" "#505050" "1" &> "/dev/null" &
+
+    # ('/usr/share/i3blocks/CalendarDropDown' "$xPos" "$yPos" "$width" '1' 'background-color:#000000;color:#ffffff;alternate-background-color:#000000;' '#000050' '3' '#505050' '1') &
+
+    # urxvt &
+
+    # /usr/share/i3blocks/CalendarDropDown "$xPos" "$yPos" "$width" 1 background-color:\#000000;color:\#ffffff;alternate-background-color:\#000000; \#000050 3 \#505050 1
+	# i3-msg -q "exec yad --calendar \
+    #     --width=$WIDTH --height=$HEIGHT \
+	#     --undecorated --fixed \
+	#     --close-on-unfocus --no-buttons \
+	#     --posx=$posX --posy=$posY \
+	#     > /dev/null"
+esac
+
+# exec "/usr/share/i3blocks/CalendarDropDown" "100" "100" "10" "1" "background-color:#000000;color:#ffffff;alternate-background-color:#000000;" "#000050" "3" "#505050" "1" &
+
+# urxvt
+
+echo "$LABEL$(date "$DATEFMT")"
+echo "$LABEL$(date "$SHORTFMT")"

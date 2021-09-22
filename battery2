@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+#
+# Copyright (C) 2016 James Murphy
+# Licensed under the GPL version 2 only
+#
+# A battery indicator blocklet script for i3blocks
+#
+# Modified by Cailean Sorce 7/22/2021
+
+import re
+from subprocess import check_output
+import subprocess
+from os import environ
+import os
+
+from PySide2.QtWidgets import * 
+from PySide2.QtGui import * 
+from PySide2.QtCore import *
+import qtDropDown
+
+fulltext = ""
+
+
+if environ.get('BLOCK_BUTTON'):
+    
+
+
+    width = environ.get("width")
+    height = 500
+    xPos = int(environ.get("x")) - int(environ.get("relative_x"))
+    yPos = int(environ.get("y")) - int(environ.get("relative_y")) 
+
+    subprocess.call(["/usr/share/i3blocks/DropDownMenus/PowerDropDown", str(xPos), str(yPos), width, "1", "background-color:#000000;color:#ffffff;alternate-background-color:#000000;", "#000050", "3", "#505050", "1"])
+
+
+ac_status = check_output(['acpi', '-a'], universal_newlines=True)
+
+if not ac_status:
+    fulltext += "AC_ERR"
+else:
+    ac_state = ac_status.split(": ")[1].split("\n")[0]
+
+
+    CSI_PLUG = "<span font='csfonts'><span color='green'>\ue00a</span>\ue009</span>"
+    CSI_PLUG_SLASH = "<span font='csfonts'><span color='red'>\ue00c</span>\ue00b</span>"
+    CSI_PLUG_QUESTION = "<span font='csfonts'><span color='darkred'>\ue00e</span>\ue00d</span>"
+
+
+
+    if ac_state == "on-line":
+        fulltext += CSI_PLUG + " "
+    elif ac_state == "off-line":
+        fulltext += CSI_PLUG_SLASH + " "
+    else:
+        fulltext += CSI_PLUG_QUESTION + " "
+
+
+
+bat_status = check_output(['acpi'], universal_newlines=True)
+
+if not bat_status:
+    # stands for no battery found
+    # TODO: make ttf battery with x
+    fulltext += "BAT_ERR"
+    percentleft = 100
+else:
+    # if there is more than one battery in one laptop, the percentage left is 
+    # available for each battery separately, although state and remaining 
+    # time for overall block is shown in the bat_status of the first battery 
+    batteries = bat_status.split("\n")
+    state_batteries=[]
+    commasplitbat_status_batteries=[]
+    percentleft_batteries=[]
+    time = ""
+    for battery in batteries:
+        if battery!='':
+            state_batteries.append(battery.split(": ")[1].split(", ")[0])
+            commasplitbat_status = battery.split(", ")
+            if not time:
+                time = commasplitbat_status[-1].strip()
+                # check if it matches a time
+                time = re.match(r"(\d+):(\d+)", time)
+                if time:
+                    time = ":".join(time.groups())
+                    timeleft = " ({})".format(time)
+                else:
+                    timeleft = ""
+
+            p = int(commasplitbat_status[1].rstrip("%\n"))
+            if p>0:
+                percentleft_batteries.append(p)
+            commasplitbat_status_batteries.append(commasplitbat_status)
+    bat_state = state_batteries[0]
+    commasplitbat_status = commasplitbat_status_batteries[0]
+    if percentleft_batteries:
+        percentleft = int(sum(percentleft_batteries)/len(percentleft_batteries))
+    else:
+        percentleft = 0
+
+
+    CSI_BATTERY_BOLT = "<span font='csfonts'><span color='yellow'>\ue003</span><span color='green'>\ue002</span>\ue001</span>"
+    CSI_BATTERY_HALFSLASH = "<span font='csfonts'><span color='green'>\ue007</span><span color='darkred'>\ue008</span>\ue006</span>"
+    CSI_BATTERY_FULL = "<span font='csfonts'><span color='green'>\ue007\ue008</span>\ue006</span>"
+    CSI_BATTERY = "<span font='csfonts'><span color='grey'>\ue007\ue008</span>\ue006</span>"
+    CSI_BATTERY_QUESTION = "<span font='csfonts'><span color='darkred'>\ue005</span>\ue004</span>"
+
+
+    if bat_state == "Discharging":
+        fulltext += CSI_BATTERY_HALFSLASH + " "
+    elif bat_state == "Full":
+        fulltext += CSI_BATTERY_FULL + " "
+        timeleft = ""
+    elif bat_state == "Charging":
+        fulltext += CSI_BATTERY_BOLT + " "
+    elif bat_state == "Unknown":
+        fulltext += CSI_BATTERY + " "
+        timeleft = ""
+
+    def color(percent):
+        if percent < 10:
+            # exit code 33 will turn background red
+            return "#FFFFFF"
+        if percent < 20:
+            return "#FF3300"
+        if percent < 30:
+            return "#FF6600"
+        if percent < 40:
+            return "#FF9900"
+        if percent < 50:
+            return "#FFCC00"
+        if percent < 60:
+            return "#FFFF00"
+        if percent < 70:
+            return "#FFFF33"
+        if percent < 80:
+            return "#FFFF66"
+        return "#FFFFFF"
+
+    fulltext += "<span color='" + color(percentleft) + "'>" + str(percentleft) + "%</span>"
+    fulltext += timeleft
+
+print('{"full_text": "' + fulltext + '"}\n')
+
+if percentleft < 10:
+    exit(33)
